@@ -1,0 +1,9 @@
+development:
+  url: YOURS.smugmug.com
+  port: 443
+  timeout: 10
+  retry: 1
+  priv_key: YOUR PRIV KEY 
+  pub_key: YOUR PUB KEY
+  use_ssl: true
+  api_path: /services/api/rest/1.2.2/
