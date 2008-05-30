@@ -1,31 +1,38 @@
 module SimpleSmugMug
   # Class that handles the communications 
   class Base
-    attr_accessor :host, :port, :api_path, :pub_key, :priv_key, :timeout, :retry, :use_ssl
+    attr_accessor :host, :port, :api_path, :pub_key, :priv_key, :timeout, :retry, :use_ssl, :session_id, :smug_user
     
-    def initialize
+    def initialize(api_key,options={:retries=>nil, :timeout=>nil})
       load_config
+      @retry = options[:retries] unless options[:retries].nil?
+      @timeout = options[:timeout] unless options[:timeout].nil?
+      @smug_user = User.new      
+      @pub_key=api_key
       @public_key_param = "APIKey=#{@pub_key}"
       @http = setup_http
     end
+    
     def load_config
-      @host = CONFIG[RAILS_ENV]['host']
-      @port = CONFIG[RAILS_ENV]['port']
-      @pub_key = CONFIG[RAILS_ENV]['pub_key']
-      @priv_key = CONFIG[RAILS_ENV]['priv_key']
-      @retry = CONFIG[RAILS_ENV]['retry']
-      @timeout = CONFIG[RAILS_ENV]['timeout']
-      @api_path = CONFIG[RAILS_ENV]['api_path']
+      @host = CONFIG['host']
+      @port = CONFIG['port']
+      @retry = CONFIG['retry']
+      @timeout = CONFIG['timeout']
+      @api_path = CONFIG['api_path']
     end
     
-    # SEtup the session for further API calls
-    # response should
-    # <?xml version="1.0" encoding="utf-8"?>
-    # <rsp stat="ok"><method>smugmug.login.anonymously</method><login><session id="6282ceea21b23f455d931c2603f06cef"></session></login></rsp>
+    # Setup the session for further API calls
     def setup_session
-      method = 'smugmug.login.anonymously'
-      response = ''
+      @session_id ||= if @smug_user.email
+                setup_session_with_username
+              else 
+                setup_session_anonymously
+              end
+    end
+    
+    def setup_session_anonymously
       begin
+        method = 'smugmug.login.anonymously'
         xml = send_request(["method=#{method}"])
         logger.debug("setup_session: xml is #{xml}")
 	      doc = Hpricot::XML(xml)
@@ -35,7 +42,31 @@ module SimpleSmugMug
         raise SetupSessionError.new("unable to setup a session")
       end
     end
-
+    
+    # *  string APIKey
+    # * string EmailAddress
+    # * string Password
+    
+    def setup_session_with_username
+      begin
+        method = 'smugmug.login.withPassword'
+        xml = send_request(["method=#{method}","EmailAddress=#{@smug_user.email}","Password=#{@smug_user.password}"])
+        logger.debug("setup_session_with_username: xml is #{xml}")
+	      doc = Hpricot::XML(xml)
+	      load_user(doc)
+        (doc/'Session').first.get_attribute('id')	      
+      rescue Exception => e
+        logger.error("setup_session: ugh it barfed, #{e.message}")
+        raise SetupSessionError.new("unable to setup a session")
+      end
+    end
+    
+    
+    def send_request_with_session(params)
+      params << "SessionID=#{@session_id}"
+      send_request(params)
+    end
+    
     def send_request(params)
       logger.debug("send_request: entry")
       data = nil
@@ -66,6 +97,15 @@ module SimpleSmugMug
     end    
   
     private
+    # <User id="241516" NickName="mochafiend" DisplayName="mochafiend"/>
+    def load_user(doc)
+        user = (doc/'User').first
+        @smug_user.user_id = user.get_attribute('id')
+        @smug_user.nickname = user.get_attribute('NickName')
+        login = (doc/'Login').first
+        @smug_user.password_hash = login.get_attribute('PasswordHash')
+        @smug_user.filesize_limit = login.get_attribute('FileSizeLimit')
+    end
     def encode_params(raw_params)
       raw_params.map{|item|
         a = item.split('=',2)
@@ -87,8 +127,7 @@ module SimpleSmugMug
       logger.debug("build_url_request: url is #{url}")
       url
     end
-  
-  
+
     def setup_http
       logger.debug("setup_http: host: #{host}, port:#{port}")
       http = Net::HTTP.new(@host,@port)
@@ -100,6 +139,13 @@ module SimpleSmugMug
       http.open_timeout =@timeout      
       http
     end
+  end
+  
+  # <Login PasswordHash="asdfasdf" AccountType="Standard" 
+  # FileSizeLimit="asdfasdf"><Session id="asdfasd"/>
+  # <User id="asdfsd" NickName="asdfasd" DisplayName="asdfasd"/>
+  class User
+    attr_accessor :user_id, :email, :password, :password_hash, :nickname, :filesize_limit
   end
 end
 
