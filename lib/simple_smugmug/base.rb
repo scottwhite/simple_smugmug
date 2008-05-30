@@ -97,7 +97,7 @@ module SimpleSmugMug
     end    
   
     private
-    # <User id="241516" NickName="mochafiend" DisplayName="mochafiend"/>
+
     def load_user(doc)
         user = (doc/'User').first
         @smug_user.user_id = user.get_attribute('id')
