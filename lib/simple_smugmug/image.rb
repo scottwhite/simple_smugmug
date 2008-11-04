@@ -72,8 +72,8 @@ module SimpleSmugMug
     
     private
       def load_urls(doc)
-        image_url= (doc/'Image').each{|e|
-          url = ImageUrl.new
+        url = ImageUrl.new
+        (doc/'Image').each{|e|
           url.id = e.get_attribute('id')
           url.key = e.get_attribute('Key')
           url.small = e.get_attribute('SmallURL')
@@ -85,9 +85,8 @@ module SimpleSmugMug
           url.tiny = e.get_attribute('TinyURL')
           url.medium = e.get_attribute('MediumURL')
           url.large = e.get_attribute('LargeURL')
-          url
         }
-        image_url
+        url
       end
     
   end
