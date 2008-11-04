@@ -1,6 +1,6 @@
 module SimpleSmugMug
   class Image
-    attr_accessor :id, :key, :api_key, :session_id
+    attr_accessor :id, :key, :api_key, :session_id, :urls
     
     def initialize(api_key=nil,session_id=nil)
       @api_key = api_key
@@ -22,17 +22,18 @@ module SimpleSmugMug
       # * String Password optional
       # * String SitePassword optional
       # * string ImageKey
-      
-      method = 'smugmug.images.getURLs'
-      base = Base.new(@api_key)
-      base.session_id = @session_id
-      params =["method=#{method}"]
-      params << "ImageID=#{@id}"
-      params << "ImageKey=#{@key}"
-      xml = base.send_request_with_session(params)
-      doc = Hpricot::XML(xml)
-      logger.debug("urls: result is #{doc}")        
-      load_urls(doc)
+      unless @urls
+        method = 'smugmug.images.getURLs'
+        base = Base.new(@api_key)
+        base.session_id = @session_id
+        params =["method=#{method}"]
+        params << "ImageID=#{@id}"
+        params << "ImageKey=#{@key}"
+        xml = base.send_request_with_session(params)
+        doc = Hpricot::XML(xml)
+        logger.debug("urls: result is #{doc}")        
+        @urls = load_urls(doc)
+      end
     end
     
     
@@ -71,7 +72,7 @@ module SimpleSmugMug
     
     private
       def load_urls(doc)
-        (doc/'Image').map{|e|
+        url = (doc/'Image').each{|e|
           url = ImageUrl.new
           url.id = e.get_attribute('id')
           url.key = e.get_attribute('Key')
@@ -86,6 +87,7 @@ module SimpleSmugMug
           url.large = e.get_attribute('LargeURL')
           url
         }
+        url
       end
     
   end
