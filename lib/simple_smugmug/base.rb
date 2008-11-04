@@ -72,7 +72,7 @@ module SimpleSmugMug
       data = nil
       s_time = Time.now
       begin
-        count = (count)?+1:0
+        count = (count)?count+1:0
         #build path
         path = build_url_request(params)
         response,data = @http.start{|h_session|
