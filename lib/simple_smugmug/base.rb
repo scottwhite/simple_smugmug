@@ -140,13 +140,6 @@ module SimpleSmugMug
       http
     end
   end
-  
-  # <Login PasswordHash="asdfasdf" AccountType="Standard" 
-  # FileSizeLimit="asdfasdf"><Session id="asdfasd"/>
-  # <User id="asdfsd" NickName="asdfasd" DisplayName="asdfasd"/>
-  class User
-    attr_accessor :user_id, :email, :password, :password_hash, :nickname, :filesize_limit
-  end
 end
 
 

@@ -17,7 +17,7 @@ module SimpleSmugMug
     end
     
     class << self
-      def find(options={:api_key=>nil,:smug_user=>nil,:nickname=>nil,:heavy=>false,:site_password=>nil})
+      def find(options={:api_key=>nil,:smug_user=>nil,:nickname=>nil,:heavy=>false,:site_password=>nil,:session_id=>nil})
         # *  SessionID - string.
         # * NickName - string (optional).
         # * Heavy - boolean (optional).
@@ -25,8 +25,9 @@ module SimpleSmugMug
         
         method = 'smugmug.albums.get'
         base = Base.new(options[:api_key])
+        base.session_id = options[:session_id]
         base.smug_user = options[:smug_user] if options[:smug_user]
-        session_id = base.setup_session
+        session_id = options[:session_id] || base.setup_session
         xml = base.send_request_with_session(["method=#{method}"])
         doc = Hpricot::XML(xml)
         logger.debug("find: result is #{doc}")        

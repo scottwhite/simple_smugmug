@@ -9,6 +9,7 @@ require File.dirname(__FILE__) + '/simple_smugmug/error'
 require File.dirname(__FILE__) + '/simple_smugmug/base'
 require File.dirname(__FILE__) + '/simple_smugmug/image'
 require File.dirname(__FILE__) + '/simple_smugmug/album'
+require File.dirname(__FILE__) + '/simple_smugmug/user'
 
 # namespace
 module SimpleSmugMug

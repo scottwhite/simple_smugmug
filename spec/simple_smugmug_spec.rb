@@ -70,15 +70,46 @@ describe "API images" do
     @user.email = LOGIN['username']
     @user.password = LOGIN['password']
     albums = SimpleSmugMug::Album.find(:api_key=>KEY['pub_key'],:smug_user=>@user)
-    @album = albums.first
+    @album = albums.select{|a| a.key == 't5bJa'}.first
   end
     it "should return a list of images" do
       @album.images.should have_at_least(1).item
     end
     
-    it "should return al ist or image URLs" do
+    it "should return a image URLs" do
       urls = @album.images.first.urls
-      urls.should have_at_least(1).item
-      urls.first.tiny.should_not be_nil
+      urls.should_not be_nil
+      urls.tiny.should_not be_nil
+      urls.thumb.should_not be_nil
+      urls.large.should_not be_nil
+      urls.original.should_not be_nil
     end
+    
+    it "should retrieve images for a specific album" do
+      album_id = @album.id
+      album_key = @album.key
+      images = SimpleSmugMug::Image.find(:api_key=>KEY['pub_key'],:smug_user=>@user,:session_id=>@album.session_id,:album_id=>album_id,:album_key=>album_key)
+      images.should_not be_empty
+      images.should have_at_least(1).item
+    end
+end    
+    
+describe "Usering user object convenience methods" do
+  before(:each) do
+    @user = SimpleSmugMug::User.new
+    @user.email = LOGIN['username']
+    @user.password = LOGIN['password']
+    @user.api_key = KEY['pub_key']
+  end
+  
+  it "should find all albums for a user" do
+    albums = @user.albums
+    albums.should have_at_least(1).item
+  end
+  
+  it "should find images for an album" do
+    album = @user.albums.first
+    images = @user.images_for_album(album.id, album.key)
+    images.should have_at_least(1).item
+  end
 end
