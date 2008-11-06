@@ -79,7 +79,7 @@ module SimpleSmugMug
           h_session.get2(path,{'user-agent'=>'simple_smugmug v1.0'})
         }
         unless response.is_a?(Net::HTTPSuccess)
-          raise InvalidResponse.new("Did not get a valid response, #{response.inspect}")
+          raise "Did not get a valid response, #{response.inspect"
         end
         
         # data = open(url)
