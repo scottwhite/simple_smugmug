@@ -1,4 +1,4 @@
 module SimpleSmugMug
-  class SetupSessionError < Exception
+  class SetupSessionError < StandardError
   end
 end

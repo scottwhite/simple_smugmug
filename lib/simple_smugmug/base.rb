@@ -84,7 +84,7 @@ module SimpleSmugMug
         
         # data = open(url)
         # data = data.read unless data.nil?
-      rescue Exception => e
+      rescue StandardError => e
         logger.error("send_request: error is #{e.message}")
         if [Timeout::Error].include?(e.class)
           retry if count < @retry
