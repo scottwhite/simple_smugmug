@@ -79,16 +79,14 @@ module SimpleSmugMug
           h_session.get2(path,{'user-agent'=>'simple_smugmug v1.0'})
         }
         unless response.is_a?(Net::HTTPSuccess)
-          raise "Did not get a valid response, #{response.inspect"
+          raise "Did not get a valid response, #{response.inspect}"
         end
         
         # data = open(url)
         # data = data.read unless data.nil?
-      rescue StandardError => e
+      rescue Timeout::Error => e
         logger.error("send_request: error is #{e.message}")
-        if [Timeout::Error].include?(e.class)
-          retry if count < @retry
-        end
+        retry if count < @retry
         raise e
       end
       delta = Time.now - s_time
