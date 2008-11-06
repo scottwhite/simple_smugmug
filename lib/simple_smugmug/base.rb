@@ -76,7 +76,7 @@ module SimpleSmugMug
         #build path
         path = build_url_request(params)
         response,data = @http.start{|h_session|
-          h_session.get2(path)
+          h_session.get2(path,{'user-agent'=>'simple_smugmug v1.0'})
         }
         unless response.is_a?(Net::HTTPSuccess)
           raise InvalidResponse.new("Did not get a valid response, #{response.inspect}")
