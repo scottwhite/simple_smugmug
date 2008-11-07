@@ -1,13 +1,31 @@
 SimpleSmugmug
 =============
 
-Introduction goes here.
+Very simple API to smugmug version 1.2.2, read only at the moment.
+Will get all your albums.  Will get images for an album.  Will populate image information when requested.
 
 
 Example
 =======
 
-Example goes here.
+user = SimpleSmugMug::User.new
+user.email = <Your smugmug email>
+user.password = <Your smugmug password>
+user.api_key = <Your public key>
 
+albums = user.albums
+images = user.albums.first.images
 
-Copyright (c) 2008 [name of plugin creator], released under the MIT license
+images = Image.find(:api_key=>user.api_key, :session_id=>user.session_id, :id=><Album ID>, :key=><Album Key>)
+
+image = images.first
+# only 2 attributes populated currently
+image.id
+image.key
+# get information for image and load up object
+image.get_info
+#urls
+image.urls.thumb
+image.urls.large
+
+Copyright (c) 2008 Scott White, released under the MIT license
