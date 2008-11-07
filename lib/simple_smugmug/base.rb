@@ -31,16 +31,7 @@ module SimpleSmugMug
     end
     
     def setup_session_anonymously
-      begin
-        method = 'smugmug.login.anonymously'
-        xml = send_request(["method=#{method}"])
-        logger.debug("setup_session: xml is #{xml}")
-	      doc = Hpricot::XML(xml)
-	      (doc/'Session').first.get_attribute('id')
-      rescue Exception => e
-        logger.error("setup_session: ugh it barfed, #{e.message}")
-        raise SetupSessionError.new("unable to setup a session")
-      end
+        setup_session_with 'smugmug.login.anonymously'
     end
     
     # *  string APIKey
@@ -48,19 +39,21 @@ module SimpleSmugMug
     # * string Password
     
     def setup_session_with_username
+      setup_session_with 'smugmug.login.withPassword'
+    end
+    
+    def setup_session_with(method)
       begin
-        method = 'smugmug.login.withPassword'
         xml = send_request(["method=#{method}","EmailAddress=#{@smug_user.email}","Password=#{@smug_user.password}"])
         logger.debug("setup_session_with_username: xml is #{xml}")
 	      doc = Hpricot::XML(xml)
 	      load_user(doc)
         (doc/'Session').first.get_attribute('id')	      
-      rescue Exception => e
-        logger.error("setup_session: ugh it barfed, #{e.message}")
+      rescue StandardError => e
+        logger.error("setup_session_with: ugh it barfed, #{e.message}")
         raise SetupSessionError.new("unable to setup a session")
-      end
+      end      
     end
-    
     
     def send_request_with_session(params)
       params << "SessionID=#{@session_id}"
