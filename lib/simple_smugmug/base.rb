@@ -31,7 +31,7 @@ module SimpleSmugMug
     end
     
     def setup_session_anonymously
-        setup_session_with 'smugmug.login.anonymously'
+        setup_session_with ["method=smugmug.login.anonymously"]
     end
     
     # *  string APIKey
@@ -39,15 +39,16 @@ module SimpleSmugMug
     # * string Password
     
     def setup_session_with_username
-      setup_session_with 'smugmug.login.withPassword'
+      method = 'smugmug.login.withPassword'
+      setup_session_with ["method=#{method}","EmailAddress=#{@smug_user.email}","Password=#{@smug_user.password}"]
     end
     
-    def setup_session_with(method)
+    def setup_session_with(request)
       begin
-        xml = send_request(["method=#{method}","EmailAddress=#{@smug_user.email}","Password=#{@smug_user.password}"])
-        logger.debug("setup_session_with_username: xml is #{xml}")
+        xml = send_request(request)
+        logger.debug("setup_session_with: xml is #{xml}")
 	      doc = Hpricot::XML(xml)
-	      load_user(doc)
+	      load_user(doc) unless (doc/:User).empty?
         (doc/'Session').first.get_attribute('id')	      
       rescue StandardError => e
         logger.error("setup_session_with: ugh it barfed, #{e.message}")
