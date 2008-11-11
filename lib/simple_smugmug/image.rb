@@ -33,9 +33,10 @@ module SimpleSmugMug
         params << "ImageID=#{@id}"
         params << "ImageKey=#{@key}"
         xml = base.send_request_with_session(params)
-        doc = Hpricot::XML(xml)
-        logger.debug("urls: result is #{doc}")        
-        @urls = load_urls(doc)
+        # doc = Hpricot::XML(xml)
+        doc = JSON.parse(xml)
+        logger.debug("urls: result is #{doc.inspect}")        
+        @urls = load_json_urls(doc)
       else
         @urls
       end
@@ -50,12 +51,13 @@ module SimpleSmugMug
         params << "ImageID=#{@id}"
         params << "ImageKey=#{@key}"
         xml = base.send_request_with_session(params)
-        doc = Hpricot::XML(xml)
-        logger.debug("urls: result is #{doc}")
+        # doc = Hpricot::XML(xml)
+        doc = JSON.parse(xml)
+        logger.debug("urls: result is #{doc.inspect}")
         @info = doc
-        load_image(@info)
+        load_json_image(@info)
       else
-        load_image(@info)
+        load_json_image(@info)
       end
     end
     
@@ -77,23 +79,68 @@ module SimpleSmugMug
         params << "AlbumID=#{options[:album_id]}"
         params << "AlbumKey=#{options[:album_key]}"
         xml = base.send_request_with_session(params)
-        doc = Hpricot::XML(xml)
-        logger.debug("find: result is #{doc}")        
+        # doc = Hpricot::XML(xml)
+        doc =JSON.parse(xml)
+        logger.debug("find: result is #{doc.inspect}")        
         load_images(doc,options[:api_key],options[:session_id])
       end
           
       private
       def load_images(doc,api_key,session_id)
-        (doc/'Image').map{|e|
+        # (doc/'Image').map{|e|
+        #   image = Image.new(api_key,session_id)
+        #   image.id = e.get_attribute('id')
+        #   image.key = e.get_attribute('Key')
+        #   image
+        # }
+        album = doc['Album']
+        album['Images'].map{|e|
           image = Image.new(api_key,session_id)
-          image.id = e.get_attribute('id')
-          image.key = e.get_attribute('Key')
+          image.id = e['id']
+          image.key = e['Key']
           image
         }
+        
       end      
+      
     end
     
     private
+    def load_json_image(doc)
+      image = doc['Image']
+
+      album.id = image['Album']["id"]
+      album.key = image['Album']["key"]
+
+      @id = image['id']
+      @key = image['Key']
+      @caption =image['Caption']
+      @file_name = image['FileName']
+      @width = image['Width'].to_i
+      @height = image['Height'].to_i
+      @last_updated = Time.parse(image['LastUpdated'])
+      @watermark = image['WaterMark']
+      @date = Time.parse(image['Date'])
+      @hidden = image['Hidden']
+      @keywords = image['Keywords']
+      @size = image['Size'].to_i
+      @position = image['Position'].to_i
+      @serial = image['Serial']
+      @format = image['Format']
+      @md5sum = image['MD5Sum']
+        
+      @urls = ImageUrl.new
+      @urls.small = image['SmallURL']
+      @urls.original = image['OriginalURL']
+      @urls.x2large = image['X2LargeURL']
+      @urls.x3large = image['X3LargeURL']
+      @urls.xlarge = image['XLargeURL']
+      @urls.thumb = image['ThumbURL']
+      @urls.tiny = image['TinyURL']
+      @urls.medium = image['MediumURL']
+      @urls.large = image['LargeURL']
+      
+    end
     def load_image(doc)
       (doc/'Album').each{|e|
         album.id = e.get_attribute("id")
@@ -148,6 +195,23 @@ module SimpleSmugMug
         }
         url
       end
+
+      def load_json_urls(doc)
+        url = ImageUrl.new
+        url.id = doc['Image']['id']
+        url.key = doc['Image']['Key']
+        url.small = doc['Image']['SmallURL']
+        url.original = doc['Image']['OriginalURL']
+        url.x2large = doc['Image']['X2LargeURL']
+        url.x3large = doc['Image']['X3LargeURL']
+        url.xlarge = doc['Image']['XLargeURL']
+        url.thumb = doc['Image']['ThumbURL']
+        url.tiny = doc['Image']['TinyURL']
+        url.medium = doc['Image']['MediumURL']
+        url.large = doc['Image']['LargeURL']
+        url
+      end
+
     
   end
   

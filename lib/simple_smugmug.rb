@@ -1,7 +1,9 @@
 # SimpleSmugmug
 require 'rubygems'
-require 'hpricot'
-require 'net/https'
+# require 'hpricot'
+require 'curb'
+require 'json'
+# require 'net/https'
 require 'yaml'
 require 'logger'
 require 'cgi'

@@ -10,7 +10,7 @@ module SimpleSmugMug
       @smug_user = User.new      
       @pub_key=api_key
       @public_key_param = "APIKey=#{@pub_key}"
-      @http = setup_http
+      # @http = setup_http
     end
     
     def load_config
@@ -46,10 +46,12 @@ module SimpleSmugMug
     def setup_session_with(request)
       begin
         xml = send_request(request)
-        logger.debug("setup_session_with: xml is #{xml}")
-	      doc = Hpricot::XML(xml)
-	      load_user(doc) unless (doc/:User).empty?
-        (doc/'Session').first.get_attribute('id')	      
+        json = JSON.parse(xml)
+        logger.debug("setup_session_with: xml is #{json}")
+        # doc = Hpricot::XML(xml)
+        
+	      load_user(json["Login"]) unless json["Login"]["User"].nil?
+        json["Login"]["Session"]["id"]
       rescue StandardError => e
         logger.error("setup_session_with: ugh it barfed, #{e.message}")
         raise SetupSessionError.new("unable to setup a session")
@@ -69,12 +71,18 @@ module SimpleSmugMug
         count = (count)?count+1:0
         #build path
         path = build_url_request(params)
-        response,data = @http.start{|h_session|
-          h_session.get2(path,{'user-agent'=>'simple_smugmug v1.0'})
-        }
-        unless response.is_a?(Net::HTTPSuccess)
-          raise "Did not get a valid response, #{response.inspect}"
+        url = "https://#{@host}" + path
+        response = Curl::Easy.perform(url) do |easy|
+          easy.headers["User-Agent"] ='simple_smugmug v1.0'
+          easy.timeout = @timeout
         end
+        data = response.body_str
+        # response,data = @http.start{|h_session|
+        #   h_session.get2(path,{'user-agent'=>'simple_smugmug v1.0'})
+        # }
+        # unless response.is_a?(Net::HTTPSuccess)
+        #   raise "Did not get a valid response, #{response.inspect}"
+        # end
         
         # data = open(url)
         # data = data.read unless data.nil?
@@ -91,12 +99,16 @@ module SimpleSmugMug
     private
 
     def load_user(doc)
-        user = (doc/'User').first
-        @smug_user.user_id = user.get_attribute('id')
-        @smug_user.nickname = user.get_attribute('NickName')
-        login = (doc/'Login').first
-        @smug_user.password_hash = login.get_attribute('PasswordHash')
-        @smug_user.filesize_limit = login.get_attribute('FileSizeLimit')
+        # user = (doc/'User').first
+        # @smug_user.user_id = user.get_attribute('id')
+        # @smug_user.nickname = user.get_attribute('NickName')
+        # login = (doc/'Login').first
+        # @smug_user.password_hash = login.get_attribute('PasswordHash')
+        # @smug_user.filesize_limit = login.get_attribute('FileSizeLimit')
+        @smug_user.user_id = doc["User"]["id"]
+        @smug_user.nickname = doc["User"]["NickName"]
+        @smug_user.password_hash = doc['PasswordHash']
+        @smug_user.filesize_limit = doc['FileSizeLimit']
     end
     def encode_params(raw_params)
       raw_params.map{|item|
@@ -122,14 +134,23 @@ module SimpleSmugMug
 
     def setup_http
       logger.debug("setup_http: host: #{host}, port:#{port}")
-      http = Net::HTTP.new(@host,@port)
-      if @port.to_i == 443
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        http.ssl_timeout = @timeout
+      easy = Curl::Easy.new
+      easy.timeout = @timeout
+      easy.url = if @port.to_i == 443
+        "https://#{@host}"
+      else
+        "http://#{@host}"
       end
-      http.open_timeout =@timeout      
-      http
+      easy.headers["User-Agent"] ='simple_smugmug v1.0'
+      # http = Net::HTTP.new(@host,@port)
+      # if @port.to_i == 443
+      #   http.use_ssl = true
+      #   http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      #   http.ssl_timeout = @timeout
+      # end
+      # http.open_timeout =@timeout      
+      # http
+      easy
     end
   end
 end

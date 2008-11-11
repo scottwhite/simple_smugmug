@@ -25,23 +25,34 @@ module SimpleSmugMug
         base.smug_user = options[:smug_user] if options[:smug_user]
         session_id = options[:session_id] || base.setup_session
         xml = base.send_request_with_session(["method=#{method}"])
-        doc = Hpricot::XML(xml)
-        logger.debug("find: result is #{doc}")        
+        # doc = Hpricot::XML(xml)
+        doc = JSON.parse(xml)
+        logger.debug("find: result is #{doc.inspect}")        
         albums = load_albums(doc,options[:api_key],session_id)
         albums
       end
       
       private
       def load_albums(doc,api_key,session_id)
-        albums = (doc/'Album').map{|e|
+        albums = doc["Albums"].map do |item|
           al = Album.new(api_key,session_id)
-          al.id = e.get_attribute('id')
-          al.title = e.get_attribute('Title')
-          al.key = e.get_attribute('Key')
-          cat = (doc/'Category').first
-          al.category = Category.new(cat.get_attribute('id'),cat.get_attribute('Name'))
+          al.id = item['id']
+          al.title = item['Title']
+          al.key = item['Key']
+          cat = item['Category']
+          al.category = Category.new(cat['id'],cat['Name'])
           al
-        }
+          
+        end
+        # albums = (doc/'Album').map{|e|
+        #   al = Album.new(api_key,session_id)
+        #   al.id = e.get_attribute('id')
+        #   al.title = e.get_attribute('Title')
+        #   al.key = e.get_attribute('Key')
+        #   cat = (doc/'Category').first
+        #   al.category = Category.new(cat.get_attribute('id'),cat.get_attribute('Name'))
+        #   al
+        # }
       end
     end
   end

@@ -34,6 +34,7 @@ describe "API for login" do
     sessionid = base.setup_session
     sessionid.should_not be_nil
     base.smug_user.nickname.should == 'mochafiend'
+    base.smug_user.user_id.should_not be_nil
   end
   it "should barf if no key found" do
     base = SimpleSmugMug::Base.new(nil)
