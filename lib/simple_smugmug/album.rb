@@ -11,6 +11,9 @@ module SimpleSmugMug
     def images
       Image.find(:api_key=>@pub_key,:session_id=>@session_id,:album_id=>@id, :album_key=>@key)
     end
+    def images_with_info
+      Image.find_with_info(:api_key=>@pub_key,:session_id=>@session_id,:album_id=>@id, :album_key=>@key)
+    end
         
     class << self
       def find(options={:api_key=>nil,:smug_user=>nil,:nickname=>nil,:heavy=>false,:site_password=>nil,:session_id=>nil})

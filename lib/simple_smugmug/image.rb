@@ -84,15 +84,43 @@ module SimpleSmugMug
         logger.debug("find: result is #{doc.inspect}")        
         load_images(doc,options[:api_key],options[:session_id])
       end
+
+      def find_with_info(options={:api_key=>nil,:session_id=>nil,:album_id=>nil, :album_key=>nil})        
+        # * SessionID - string.
+        # * AlbumID - integer.
+        # * Heavy - boolean (optional).
+        # * Password - string (optional).
+        # * SitePassword - string (optional).
+        # * AlbumKey - string.
+        method = 'smugmug.images.get'
+        base = Base.new(options[:api_key])
+        base.session_id = options[:session_id]
+        params =["method=#{method}"]
+        params << "AlbumID=#{options[:album_id]}"
+        params << "AlbumKey=#{options[:album_key]}"
+        xml = base.send_request_with_session(params)
+        doc =JSON.parse(xml)
+        logger.debug("find_with_info: result is #{doc.inspect}")        
+        images = load_images(doc,options[:api_key],options[:session_id])
+        # build paths
+        mega_params =[]
+        mega_params = images.map do |image|
+          params =["method=smugmug.images.getInfo"]
+          params << "ImageID=#{image.id}"
+          params << "ImageKey=#{image.key}"
+          params << "SessionID=#{options[:session_id]}"
+          params
+        end
+        big_json= base.send_multi_request(mega_params)
+        big_json.each_with_index do |json,i|
+          doc = JSON.parse(json)
+          images[i].from_json(json)
+        end
+        images
+      end
           
       private
       def load_images(doc,api_key,session_id)
-        # (doc/'Image').map{|e|
-        #   image = Image.new(api_key,session_id)
-        #   image.id = e.get_attribute('id')
-        #   image.key = e.get_attribute('Key')
-        #   image
-        # }
         album = doc['Album']
         album['Images'].map{|e|
           image = Image.new(api_key,session_id)
@@ -104,6 +132,10 @@ module SimpleSmugMug
       end      
       
     end
+    def from_json(json)
+      load_json_image(JSON.parse(json))
+    end
+    
     
     private
     def load_json_image(doc)
@@ -141,6 +173,7 @@ module SimpleSmugMug
       @urls.large = image['LargeURL']
       
     end
+    private
     def load_image(doc)
       (doc/'Album').each{|e|
         album.id = e.get_attribute("id")

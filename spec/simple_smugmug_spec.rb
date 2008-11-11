@@ -77,6 +77,23 @@ describe "API images" do
       @album.images.should have_at_least(1).item
     end
     
+    it "should return a huge json" do
+      big = @album.images_with_info
+      big.should_not be_nil
+      image = big.first
+      image.file_name.should_not be_nil
+      image.height.should > 0
+      image.width.should > 0
+      image.date.should > Time.parse('2000-01-01')
+      image.md5sum.should_not be_nil
+      image.format.should_not be_nil
+      image.position.should == 1
+      image.urls.tiny.should_not be_nil
+      image.urls.thumb.should_not be_nil
+      image.urls.large.should_not be_nil
+      image.urls.original.should_not be_nil      
+    end
+    
     it "should return image info" do
       image = @album.images.first
       image.get_info

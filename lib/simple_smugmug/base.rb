@@ -76,7 +76,7 @@ module SimpleSmugMug
           easy.headers["User-Agent"] ='simple_smugmug v1.0'
           easy.timeout = @timeout
         end
-        data = response.body_str
+        data = response.body_str unless response.nil?
         # response,data = @http.start{|h_session|
         #   h_session.get2(path,{'user-agent'=>'simple_smugmug v1.0'})
         # }
@@ -95,6 +95,36 @@ module SimpleSmugMug
       logger.debug("send_request: time taken #{delta}")
       data
     end    
+  
+    def send_multi_request(queries =[])
+      logger.debug("send_multi_request: entry")
+      data = nil
+      s_time = Time.now
+      begin
+        count = (count)?count+1:0
+        host_path = "https://#{@host}"
+        urls = queries.map do |params|
+          host_path + build_url_request(params)
+        end
+        easy = Curl::Easy.new
+        easy.headers["User-Agent"] ='simple_smugmug v1.0'
+        easy.timeout = @timeout
+        response = urls.map do |url|
+            easy.url = url
+            easy.perform
+            easy.body_str
+        end
+        data = response unless response.nil?
+      rescue Timeout::Error => e
+        logger.error("send_request: error is #{e.message}")
+        retry if count < @retry
+        raise e
+      end
+      delta = Time.now - s_time
+      logger.debug("send_request: time taken #{delta}")
+      data
+    end    
+  
   
     private
 

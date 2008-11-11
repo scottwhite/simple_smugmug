@@ -4,6 +4,8 @@ SimpleSmugmug
 Very simple API to smugmug version 1.2.2, read only at the moment.
 Will get all your albums.  Will get images for an album.  Will populate image information when requested.
 
+NOTE: Requires JSON and curb gems
+
 
 Example
 =======

@@ -20,6 +20,10 @@ module SimpleSmugMug
     def images_for_album(id,key)
       Image.find(:api_key=>@api_key,:session_id=>session_id,:album_id=>id,:album_key=>key)
     end
+    def images_with_info_for_album(id,key)
+      Image.find_with_info(:api_key=>@api_key,:session_id=>session_id,:album_id=>id,:album_key=>key)
+    end
+    
   end
   
 end
