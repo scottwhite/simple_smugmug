@@ -10,7 +10,6 @@ module SimpleSmugMug
       @smug_user = User.new      
       @pub_key=api_key
       @public_key_param = "APIKey=#{@pub_key}"
-      # @http = setup_http
     end
     
     def load_config
@@ -48,7 +47,6 @@ module SimpleSmugMug
         xml = send_request(request)
         json = JSON.parse(xml)
         logger.debug("setup_session_with: xml is #{json}")
-        # doc = Hpricot::XML(xml)
         
 	      load_user(json["Login"]) unless json["Login"]["User"].nil?
         json["Login"]["Session"]["id"]
@@ -77,15 +75,6 @@ module SimpleSmugMug
           easy.timeout = @timeout
         end
         data = response.body_str unless response.nil?
-        # response,data = @http.start{|h_session|
-        #   h_session.get2(path,{'user-agent'=>'simple_smugmug v1.0'})
-        # }
-        # unless response.is_a?(Net::HTTPSuccess)
-        #   raise "Did not get a valid response, #{response.inspect}"
-        # end
-        
-        # data = open(url)
-        # data = data.read unless data.nil?
       rescue Timeout::Error => e
         logger.error("send_request: error is #{e.message}")
         retry if count < @retry
@@ -129,12 +118,6 @@ module SimpleSmugMug
     private
 
     def load_user(doc)
-        # user = (doc/'User').first
-        # @smug_user.user_id = user.get_attribute('id')
-        # @smug_user.nickname = user.get_attribute('NickName')
-        # login = (doc/'Login').first
-        # @smug_user.password_hash = login.get_attribute('PasswordHash')
-        # @smug_user.filesize_limit = login.get_attribute('FileSizeLimit')
         @smug_user.user_id = doc["User"]["id"]
         @smug_user.nickname = doc["User"]["NickName"]
         @smug_user.password_hash = doc['PasswordHash']
@@ -160,27 +143,6 @@ module SimpleSmugMug
       url = @api_path + '?' +encoded.join('&')
       logger.debug("build_url_request: url is #{url}")
       url
-    end
-
-    def setup_http
-      logger.debug("setup_http: host: #{host}, port:#{port}")
-      easy = Curl::Easy.new
-      easy.timeout = @timeout
-      easy.url = if @port.to_i == 443
-        "https://#{@host}"
-      else
-        "http://#{@host}"
-      end
-      easy.headers["User-Agent"] ='simple_smugmug v1.0'
-      # http = Net::HTTP.new(@host,@port)
-      # if @port.to_i == 443
-      #   http.use_ssl = true
-      #   http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      #   http.ssl_timeout = @timeout
-      # end
-      # http.open_timeout =@timeout      
-      # http
-      easy
     end
   end
 end
